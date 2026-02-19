@@ -349,15 +349,23 @@ def step_fan_config_pulsar_header_routing(context, header_key):
 
 
 @given('a one-to-one config with {mapping_count:d} topic mappings')
+@given('a one-to-one config with {mapping_count:d} topic mapping')
 def step_one_to_one_config_kafka(context, mapping_count):
     """Create one-to-one config with topic mappings"""
     bootstrap_servers = context.kafka_container.get_bootstrap_servers()
     
-    mappings = [
+    # Define available mappings
+    all_mappings = [
+        {'source_topic': 'ordered-input', 'destination_topic': 'ordered-output'},
         {'source_topic': 'orders', 'destination_topic': 'orders-processed'},
         {'source_topic': 'payments', 'destination_topic': 'payments-processed'},
         {'source_topic': 'inventory', 'destination_topic': 'inventory-processed'},
-    ][:mapping_count]
+        {'source_topic': 'high-volume-1', 'destination_topic': 'high-volume-1-out'},
+        {'source_topic': 'high-volume-2', 'destination_topic': 'high-volume-2-out'},
+    ]
+    
+    # Select mappings based on count
+    mappings = all_mappings[:mapping_count]
     
     config = {
         'mode': 'one_to_one',

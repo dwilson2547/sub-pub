@@ -89,6 +89,12 @@ class KafkaTestHelper:
             
         Returns:
             List of consumed messages with metadata
+            
+        Note:
+            Creates a new consumer with unique group ID for each call to avoid
+            subscription conflicts. Consumer groups will accumulate in Kafka
+            metadata but are automatically cleaned up by Kafka's group coordinator
+            after the configured timeout.
         """
         # Create a new consumer for each consume operation to avoid subscription conflicts
         consumer = KafkaConsumer(
@@ -97,7 +103,8 @@ class KafkaTestHelper:
             group_id=f"test-consumer-{int(time.time() * 1000)}",  # Unique group ID per consume
             auto_offset_reset='earliest',
             enable_auto_commit=True,
-            value_deserializer=lambda m: m.decode('utf-8') if m else None,
+            # Handle both UTF-8 and non-UTF-8 byte values gracefully
+            value_deserializer=lambda m: m.decode('utf-8', errors='replace') if m else None,
             consumer_timeout_ms=10000  # 10 second timeout
         )
         
@@ -215,7 +222,7 @@ class PulsarTestHelper:
                 msg_dict = {
                     'topic': msg.topic_name(),
                     'message_id': str(msg.message_id()),
-                    'data': msg.data().decode('utf-8'),
+                    'data': msg.data().decode('utf-8', errors='replace'),
                     'properties': dict(msg.properties())
                 }
                 messages.append(msg_dict)
@@ -224,9 +231,12 @@ class PulsarTestHelper:
                 consumer.acknowledge(msg)
                 
             except Exception as e:
-                # Timeout or other error
+                # Check if we've exceeded timeout
                 if time.time() - start_time >= timeout:
+                    import logging
+                    logging.debug(f"Timeout reached while consuming Pulsar messages: {e}")
                     break
+                # Otherwise, likely a receive timeout, continue trying
                     
         return messages
         

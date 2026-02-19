@@ -2,6 +2,16 @@
 
 This directory contains a comprehensive Gherkin-based test suite for sub-pub that uses testcontainers to spin up temporary message system services and validate end-to-end functionality.
 
+## ✅ Test Status
+
+**Working Tests:**
+- ✅ Kafka one-to-one mode - PASSING
+- ⏳ Additional test scenarios - Ready to run
+- ⏳ Pulsar tests - Container ready, tests available
+- ⏳ Cross-system tests - Infrastructure ready
+- ⏳ Iggy tests - Container ready (requires Iggy client implementation)
+- ⏳ Google Pub/Sub tests - Container ready (requires client implementation)
+
 ## Overview
 
 The test suite uses:
