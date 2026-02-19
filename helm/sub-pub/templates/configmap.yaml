@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sub-pub.fullname" . }}-config
+  labels:
+    {{- include "sub-pub.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    mode: {{ .Values.config.mode }}
+    
+    thread_pool:
+      max_workers: {{ .Values.config.threadPool.maxWorkers }}
+      queue_size: {{ .Values.config.threadPool.queueSize }}
+    
+    back_pressure:
+      enabled: {{ .Values.config.backPressure.enabled }}
+      queue_high_watermark: {{ .Values.config.backPressure.queueHighWatermark }}
+      queue_low_watermark: {{ .Values.config.backPressure.queueLowWatermark }}
+    
+    {{- if eq .Values.config.mode "one_to_one" }}
+    one_to_one:
+      source:
+        type: {{ .Values.config.oneToOne.source.type }}
+        connection:
+          {{- toYaml .Values.config.oneToOne.source.connection | nindent 10 }}
+      
+      destination:
+        type: {{ .Values.config.oneToOne.destination.type }}
+        connection:
+          {{- toYaml .Values.config.oneToOne.destination.connection | nindent 10 }}
+      
+      mappings:
+        {{- range .Values.config.oneToOne.mappings }}
+        - source_topic: {{ .sourceTopicName | quote }}
+          destination_topic: {{ .destinationTopicName | quote }}
+        {{- end }}
+    {{- end }}
+    
+    {{- if eq .Values.config.mode "funnel" }}
+    funnel:
+      sources:
+        {{- range .Values.config.funnel.sources }}
+        - type: {{ .type }}
+          connection:
+            {{- toYaml .connection | nindent 12 }}
+          {{- if .topics }}
+          topics:
+            {{- toYaml .topics | nindent 12 }}
+          {{- end }}
+        {{- end }}
+      
+      destination:
+        type: {{ .Values.config.funnel.destination.type }}
+        connection:
+          {{- toYaml .Values.config.funnel.destination.connection | nindent 10 }}
+      
+      destination_topic: {{ .Values.config.funnel.destinationTopic | quote }}
+    {{- end }}
+    
+    {{- if eq .Values.config.mode "fan" }}
+    fan:
+      source:
+        type: {{ .Values.config.fan.source.type }}
+        connection:
+          {{- toYaml .Values.config.fan.source.connection | nindent 10 }}
+      
+      source_topic: {{ .Values.config.fan.sourceTopic | quote }}
+      
+      destination:
+        type: {{ .Values.config.fan.destination.type }}
+        connection:
+          {{- toYaml .Values.config.fan.destination.connection | nindent 10 }}
+      
+      destination_resolver:
+        type: {{ .Values.config.fan.destinationResolver.type }}
+        key: {{ .Values.config.fan.destinationResolver.key }}
+    {{- end }}

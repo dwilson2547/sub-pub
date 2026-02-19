@@ -250,6 +250,34 @@ Metrics are logged on shutdown and can be exposed via HTTP endpoint for Promethe
 
 Each stage runs in its own thread pool with independent back-pressure control.
 
+## Deployment
+
+### Docker
+
+Build and run with Docker:
+
+```bash
+# Build the image
+docker build -t sub-pub:latest .
+
+# Run with a config file
+docker run -v $(pwd)/examples:/app/config sub-pub:latest -c /app/config/mock-config.yaml -l INFO
+```
+
+### Kubernetes
+
+Deploy to Kubernetes using Helm:
+
+```bash
+# Install with default values
+helm install sub-pub ./helm/sub-pub
+
+# Install with custom values
+helm install sub-pub ./helm/sub-pub -f custom-values.yaml
+```
+
+See [helm/KUBERNETES.md](helm/KUBERNETES.md) for detailed Kubernetes deployment instructions.
+
 ## Development
 
 ### Running Tests

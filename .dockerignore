@@ -1,0 +1,66 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Tests
+.pytest_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+tests/
+test_*.py
+behave.ini
+pretty.output
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Documentation
+docs/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Helm
+helm/
+
+# Other
+*.log
+.DS_Store
+demo.py
+TESTING.md
+ARCHITECTURE.md
+IMPLEMENTATION_SUMMARY.md
+QUICKSTART.md

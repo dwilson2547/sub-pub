@@ -1,0 +1,14 @@
+apiVersion: v2
+name: sub-pub
+description: A Helm chart for sub-pub message processor
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - messaging
+  - pubsub
+  - kafka
+  - pulsar
+home: https://github.com/dwilson2547/sub-pub
+maintainers:
+  - name: David Wilson
