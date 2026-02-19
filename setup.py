@@ -31,6 +31,12 @@ setup(
         "pulsar": ["pulsar-client>=3.3.0"],
         "eventhubs": ["azure-eventhub>=5.11.0"],
         "google_pubsub": ["google-cloud-pubsub>=2.18.0"],
+        "test": [
+            "behave>=1.2.6",
+            "testcontainers>=3.7.1",
+            "pytest>=7.4.0",
+            "pytest-bdd>=6.1.1",
+        ],
         "all": [
             "kafka-python>=2.0.2",
             "pulsar-client>=3.3.0",
