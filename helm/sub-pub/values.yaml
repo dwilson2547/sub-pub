@@ -114,8 +114,8 @@ config:
       connection:
         bootstrapServers: "kafka:9092"
     mappings:
-      - sourceTopicName: "input-topic"
-        destinationTopicName: "output-topic"
+      - source_topic: "input-topic"
+        destination_topic: "output-topic"
 
   # Funnel mode configuration (example - commented out)
   # funnel:

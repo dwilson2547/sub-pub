@@ -65,10 +65,10 @@ config:
       connection:
         bootstrapServers: "kafka-dest.default.svc.cluster.local:9092"
     mappings:
-      - sourceTopicName: "orders"
-        destinationTopicName: "orders-processed"
-      - sourceTopicName: "payments"
-        destinationTopicName: "payments-processed"
+      - source_topic: "orders"
+        destination_topic: "orders-processed"
+      - source_topic: "payments"
+        destination_topic: "payments-processed"
 
 resources:
   limits:
@@ -111,8 +111,8 @@ config:
       connection:
         bootstrapServers: "kafka:9092"
     mappings:
-      - sourceTopicName: "topic-a"
-        destinationTopicName: "topic-b"
+      - source_topic: "topic-a"
+        destination_topic: "topic-b"
 ```
 
 #### Funnel Mode
@@ -368,8 +368,8 @@ config:
       connection:
         bootstrapServers: "kafka-cluster.messaging.svc.cluster.local:9092"
     mappings:
-      - sourceTopicName: "orders"
-        destinationTopicName: "orders-processed"
+      - source_topic: "orders"
+        destination_topic: "orders-processed"
 
 resources:
   limits:
@@ -384,10 +384,6 @@ autoscaling:
   minReplicas: 3
   maxReplicas: 20
   targetCPUUtilizationPercentage: 70
-
-podDisruptionBudget:
-  enabled: true
-  minAvailable: 2
 
 affinity:
   podAntiAffinity:

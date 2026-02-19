@@ -36,12 +36,12 @@ config:
       connection:
         bootstrapServers: "kafka-cluster.default.svc.cluster.local:9092"
     mappings:
-      - sourceTopicName: "orders"
-        destinationTopicName: "orders-processed"
-      - sourceTopicName: "payments"
-        destinationTopicName: "payments-processed"
-      - sourceTopicName: "inventory"
-        destinationTopicName: "inventory-processed"
+      - source_topic: "orders"
+        destination_topic: "orders-processed"
+      - source_topic: "payments"
+        destination_topic: "payments-processed"
+      - source_topic: "inventory"
+        destination_topic: "inventory-processed"
 
 resources:
   limits:
