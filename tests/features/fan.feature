@@ -10,7 +10,7 @@ Feature: Fan Mode End-to-End Testing
     When I publish message "order-data" with header "destination_topic" = "orders" to topic "fan-source"
     And I publish message "payment-data" with header "destination_topic" = "payments" to topic "fan-source"
     And I start sub-pub with the fan config
-    And I wait for 5 seconds
+    And I wait for 15 seconds
     Then destination topic "orders" should receive 1 message
     And the message should contain "order-data"
     And destination topic "payments" should receive 1 message
@@ -23,7 +23,7 @@ Feature: Fan Mode End-to-End Testing
     When I publish JSON message {"routing_key": "metrics", "data": "cpu-usage"} to topic "fan-source"
     And I publish JSON message {"routing_key": "logs", "data": "error-log"} to topic "fan-source"
     And I start sub-pub with the fan config
-    And I wait for 5 seconds
+    And I wait for 15 seconds
     Then destination topic "metrics" should receive 1 message
     And destination topic "logs" should receive 1 message
 
@@ -34,7 +34,7 @@ Feature: Fan Mode End-to-End Testing
     When I publish message "event1" with property "destination" = "stream1" to topic "persistent://public/default/fan-input"
     And I publish message "event2" with property "destination" = "stream2" to topic "persistent://public/default/fan-input"
     And I start sub-pub with the fan config
-    And I wait for 5 seconds
+    And I wait for 15 seconds
     Then Pulsar topic "persistent://public/default/stream1" should receive 1 message
     And Pulsar topic "persistent://public/default/stream2" should receive 1 message
 

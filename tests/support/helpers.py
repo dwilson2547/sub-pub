@@ -90,26 +90,38 @@ class KafkaTestHelper:
         Returns:
             List of consumed messages with metadata
         """
-        consumer = self.create_consumer(topics)
+        # Create a new consumer for each consume operation to avoid subscription conflicts
+        consumer = KafkaConsumer(
+            *topics,
+            bootstrap_servers=self.bootstrap_servers,
+            group_id=f"test-consumer-{int(time.time() * 1000)}",  # Unique group ID per consume
+            auto_offset_reset='earliest',
+            enable_auto_commit=True,
+            value_deserializer=lambda m: m.decode('utf-8') if m else None,
+            consumer_timeout_ms=10000  # 10 second timeout
+        )
         
         messages = []
         start_time = time.time()
         
-        while len(messages) < count and (time.time() - start_time) < timeout:
-            for message in consumer:
-                msg_dict = {
-                    'topic': message.topic,
-                    'partition': message.partition,
-                    'offset': message.offset,
-                    'key': message.key.decode('utf-8') if message.key else None,
-                    'value': message.value,
-                    'headers': {k: v.decode('utf-8') if isinstance(v, bytes) else v 
-                               for k, v in (message.headers or [])}
-                }
-                messages.append(msg_dict)
-                
-                if len(messages) >= count:
-                    break
+        try:
+            while len(messages) < count and (time.time() - start_time) < timeout:
+                for message in consumer:
+                    msg_dict = {
+                        'topic': message.topic,
+                        'partition': message.partition,
+                        'offset': message.offset,
+                        'key': message.key.decode('utf-8') if message.key else None,
+                        'value': message.value,
+                        'headers': {k: v.decode('utf-8') if isinstance(v, bytes) else v 
+                                   for k, v in (message.headers or [])}
+                    }
+                    messages.append(msg_dict)
+                    
+                    if len(messages) >= count:
+                        break
+        finally:
+            consumer.close()
                     
         return messages
         

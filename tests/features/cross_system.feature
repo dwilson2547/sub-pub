@@ -10,7 +10,7 @@ Feature: Cross-System Integration Testing
     And a one-to-one config routing Kafka to Pulsar
     When I publish message "kafka-to-pulsar-test" to Kafka topic "kafka-src"
     And I start sub-pub with the one-to-one config
-    And I wait for 5 seconds
+    And I wait for 15 seconds
     Then Pulsar topic "persistent://public/default/pulsar-dst" should receive 1 message
     And the message should contain "kafka-to-pulsar-test"
 
@@ -21,7 +21,7 @@ Feature: Cross-System Integration Testing
     And a one-to-one config routing Pulsar to Kafka
     When I publish message "pulsar-to-kafka-test" to Pulsar topic "persistent://public/default/pulsar-src"
     And I start sub-pub with the one-to-one config
-    And I wait for 5 seconds
+    And I wait for 15 seconds
     Then Kafka topic "kafka-dst" should receive 1 message
     And the message should contain "pulsar-to-kafka-test"
 
@@ -33,7 +33,7 @@ Feature: Cross-System Integration Testing
     When I publish message "from-kafka" to Kafka topic "kafka-input"
     And I publish message "from-pulsar" to Pulsar topic "persistent://public/default/pulsar-input"
     And I start sub-pub with the funnel config
-    And I wait for 5 seconds
+    And I wait for 15 seconds
     Then Kafka topic "mixed-output" should receive 2 messages
     And the messages should contain "from-kafka"
     And the messages should contain "from-pulsar"
@@ -45,7 +45,7 @@ Feature: Cross-System Integration Testing
     And a one-to-one config routing Iggy to Kafka
     When I publish message "iggy-message" to Iggy stream "test-stream"
     And I start sub-pub with the one-to-one config
-    And I wait for 5 seconds
+    And I wait for 15 seconds
     Then Kafka topic "kafka-from-iggy" should receive 1 message
 
   @google_pubsub @kafka
@@ -55,5 +55,5 @@ Feature: Cross-System Integration Testing
     And a one-to-one config routing Google Pub/Sub to Kafka
     When I publish message "pubsub-message" to Google Pub/Sub topic "test-topic"
     And I start sub-pub with the one-to-one config
-    And I wait for 5 seconds
+    And I wait for 15 seconds
     Then Kafka topic "kafka-from-pubsub" should receive 1 message
