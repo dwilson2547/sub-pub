@@ -14,7 +14,16 @@ Feature: One-to-One Mode End-to-End Testing # tests/features/one_to_one.feature:
     Then destination topic "orders-processed" should receive 1 message   # tests/features/steps/message_steps.py:203
     And the message should contain "order-123"                           # tests/features/steps/message_steps.py:245
     And destination topic "payments-processed" should receive 1 message  # tests/features/steps/message_steps.py:203
-    And the message should contain "payment-456"                         # tests/features/steps/message_steps.py:245
-    And destination topic "inventory-processed" should receive 1 message # tests/features/steps/message_steps.py:203
-    And the message should contain "inventory-789"                       # tests/features/steps/message_steps.py:245
+      ASSERT FAILED: Expected 1 messages, but got 0
+
+    And the message should contain "payment-456"                         # None
+    And destination topic "inventory-processed" should receive 1 message # None
+    And the message should contain "inventory-789"                       # None
+----
+CAPTURED LOG: before_scenario
+INFO:testcontainers.core.container:Pulling image testcontainers/ryuk:0.8.1
+INFO:testcontainers.core.container:Container started: df491cc8432d
+INFO:testcontainers.core.container:Pulling image confluentinc/cp-kafka:7.6.0
+INFO:testcontainers.core.container:Container started: 27e34e520d52
+---- CAPTURED_SCENARIO_OUTPUT_END ----
 

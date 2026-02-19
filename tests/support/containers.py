@@ -10,14 +10,15 @@ This module provides testcontainer implementations for:
 import json
 import time
 from typing import Dict, Optional, Any
+from testcontainers.kafka import KafkaContainer as TCKafkaContainer
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.waiting_utils import wait_for_logs
 
 
 class KafkaContainer:
-    """Kafka testcontainer wrapper using Confluent Platform"""
+    """Kafka testcontainer wrapper using testcontainers built-in support"""
     
-    def __init__(self, version: str = "7.5.0"):
+    def __init__(self, version: str = "7.6.0"):
         """Initialize Kafka container
         
         Args:
@@ -29,38 +30,16 @@ class KafkaContainer:
         
     def start(self) -> 'KafkaContainer':
         """Start Kafka container"""
-        # Use Confluent's Kafka container which is easier to setup than vanilla Kafka
-        self.container = DockerContainer(f"confluentinc/cp-kafka:{self.version}")
-        
-        # Configure Kafka
-        self.container.with_env("KAFKA_BROKER_ID", "1")
-        self.container.with_env("KAFKA_ZOOKEEPER_CONNECT", "ignored")  # KRaft mode doesn't need ZooKeeper
-        self.container.with_env("KAFKA_LISTENERS", "PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9094")
-        self.container.with_env("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://localhost:9092,EXTERNAL://localhost:9094")
-        self.container.with_env("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT")
-        self.container.with_env("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1")
-        self.container.with_env("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "1")
-        self.container.with_env("KAFKA_TRANSACTION_STATE_LOG_MIN_ISR", "1")
-        self.container.with_env("KAFKA_CONTROLLER_QUORUM_VOTERS", "1@localhost:9093")
-        self.container.with_env("KAFKA_CONTROLLER_LISTENER_NAMES", "CONTROLLER")
-        self.container.with_env("KAFKA_INTER_BROKER_LISTENER_NAME", "PLAINTEXT")
-        self.container.with_env("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "true")
-        self.container.with_env("CLUSTER_ID", "MkU3OEVBNTcwNTJENDM2Qk")  # Must be base64 UUID for KRaft
-        
-        # Expose ports
-        self.container.with_exposed_ports(9092, 9094)
-        
-        # Start container
+        # Use testcontainers' built-in Kafka support with KRaft
+        self.container = TCKafkaContainer(image=f"confluentinc/cp-kafka:{self.version}")
+        self.container.with_kraft()  # Use KRaft mode (no ZooKeeper needed)
         self.container.start()
         
-        # Get mapped ports
-        port = self.container.get_exposed_port(9094)
-        host = self.container.get_container_host_ip()
-        self.bootstrap_servers = f"{host}:{port}"
+        # Get bootstrap servers
+        self.bootstrap_servers = self.container.get_bootstrap_server()
         
-        # Wait for Kafka to be ready
-        wait_for_logs(self.container, ".*started.*", timeout=60)
-        time.sleep(5)  # Additional wait for broker to fully initialize
+        # Additional wait for full readiness
+        time.sleep(3)
         
         return self
         
