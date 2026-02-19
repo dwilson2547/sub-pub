@@ -21,8 +21,12 @@ class PulsarSource(MessageSource):
         try:
             import pulsar
             
-            service_url = self.config.pop('service_url')
-            self.client = pulsar.Client(service_url)
+            service_url = self.config.get('service_url')
+            if not service_url:
+                raise ValueError("service_url is required in Pulsar configuration")
+            # Create a copy of config without service_url for other parameters
+            other_params = {k: v for k, v in self.config.items() if k != 'service_url'}
+            self.client = pulsar.Client(service_url, **other_params)
             logger.info("Connected to Pulsar source")
         except ImportError:
             logger.error("pulsar-client package not installed. Install with: pip install pulsar-client")
@@ -48,12 +52,16 @@ class PulsarSource(MessageSource):
             
             headers = dict(msg.properties()) if msg.properties() else {}
             
+            # Convert Pulsar timestamp (milliseconds) to datetime
+            from datetime import datetime
+            timestamp = datetime.fromtimestamp(msg.publish_timestamp() / 1000.0) if msg.publish_timestamp() else None
+            
             yield Message(
                 payload=msg.data(),
                 headers=headers,
                 topic=msg.topic_name(),
                 key=msg.partition_key() or None,
-                timestamp=msg.publish_timestamp()
+                timestamp=timestamp
             )
         
     def close(self) -> None:
@@ -84,8 +92,12 @@ class PulsarPublisher(MessagePublisher):
         try:
             import pulsar
             
-            service_url = self.config.pop('service_url')
-            self.client = pulsar.Client(service_url)
+            service_url = self.config.get('service_url')
+            if not service_url:
+                raise ValueError("service_url is required in Pulsar configuration")
+            # Create a copy of config without service_url for other parameters
+            other_params = {k: v for k, v in self.config.items() if k != 'service_url'}
+            self.client = pulsar.Client(service_url, **other_params)
             logger.info("Connected to Pulsar publisher")
         except ImportError:
             logger.error("pulsar-client package not installed. Install with: pip install pulsar-client")

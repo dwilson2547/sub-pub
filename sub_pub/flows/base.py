@@ -76,7 +76,7 @@ class Flow(ABC):
                 # Get message from domain queue (with timeout for clean shutdown)
                 try:
                     message, dest_topic = self.domain_queue.get(timeout=0.1)
-                except:
+                except Exception:
                     continue
                 
                 try:
@@ -106,7 +106,7 @@ class Flow(ABC):
                 # Get message from publish queue (with timeout for clean shutdown)
                 try:
                     message, dest_topic = self.publish_queue.get(timeout=0.1)
-                except:
+                except Exception:
                     continue
                 
                 try:
