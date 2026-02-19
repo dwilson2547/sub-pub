@@ -1,0 +1,36 @@
+1. Get the application name by running:
+  export APP_NAME={{ include "sub-pub.fullname" . }}
+
+2. Check the deployment status:
+  kubectl get deployment $APP_NAME -n {{ .Release.Namespace }}
+
+3. View the pods:
+  kubectl get pods -l "app.kubernetes.io/name={{ include "sub-pub.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -n {{ .Release.Namespace }}
+
+4. View logs:
+  kubectl logs -f deployment/$APP_NAME -n {{ .Release.Namespace }}
+
+5. To update the configuration, edit the ConfigMap:
+  kubectl edit configmap {{ include "sub-pub.fullname" . }}-config -n {{ .Release.Namespace }}
+  
+  Then restart the deployment:
+  kubectl rollout restart deployment/$APP_NAME -n {{ .Release.Namespace }}
+
+{{- if .Values.service.enabled }}
+
+6. Access the metrics endpoint (if available):
+  export SERVICE_NAME={{ include "sub-pub.fullname" . }}
+  kubectl port-forward svc/$SERVICE_NAME {{ .Values.service.port }}:{{ .Values.service.port }} -n {{ .Release.Namespace }}
+  
+  Then visit: http://127.0.0.1:{{ .Values.service.port }}
+{{- end }}
+
+Configuration:
+  Mode: {{ .Values.config.mode }}
+  Log Level: {{ .Values.config.logLevel }}
+  Replicas: {{ .Values.replicaCount }}
+{{- if .Values.autoscaling.enabled }}
+  Autoscaling: Enabled ({{ .Values.autoscaling.minReplicas }}-{{ .Values.autoscaling.maxReplicas }} replicas)
+{{- end }}
+
+For more information, visit: https://github.com/dwilson2547/sub-pub

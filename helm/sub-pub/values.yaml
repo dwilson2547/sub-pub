@@ -1,0 +1,162 @@
+# Default values for sub-pub
+replicaCount: 1
+
+image:
+  repository: sub-pub
+  pullPolicy: IfNotPresent
+  tag: ""  # Overrides the image tag whose default is the chart appVersion
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Autoscaling configuration
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+# Node selector for pod assignment
+nodeSelector: {}
+
+# Tolerations for pod assignment
+tolerations: []
+
+# Affinity for pod assignment
+affinity: {}
+
+# Liveness and readiness probes
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  timeoutSeconds: 10
+  failureThreshold: 3
+  exec:
+    command:
+    - pgrep
+    - -f
+    - sub-pub
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  exec:
+    command:
+    - pgrep
+    - -f
+    - sub-pub
+
+# Sub-pub application configuration
+config:
+  # Mode of operation: funnel, fan, or one_to_one
+  mode: one_to_one
+  
+  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  logLevel: INFO
+  
+  # Thread pool configuration
+  threadPool:
+    maxWorkers: 20
+    queueSize: 2000
+  
+  # Back pressure configuration
+  backPressure:
+    enabled: true
+    queueHighWatermark: 0.8
+    queueLowWatermark: 0.5
+  
+  # One-to-one mode configuration (example)
+  oneToOne:
+    source:
+      type: kafka
+      connection:
+        bootstrapServers: "kafka:9092"
+        groupId: "sub-pub-group"
+    destination:
+      type: kafka
+      connection:
+        bootstrapServers: "kafka:9092"
+    mappings:
+      - source_topic: "orders-raw"
+        destination_topic: "orders-validated"
+
+  # Funnel mode configuration (example - commented out)
+  # funnel:
+  #   sources:
+  #     - type: kafka
+  #       connection:
+  #         bootstrapServers: "kafka:9092"
+  #         groupId: "sub-pub-group"
+  #       topics:
+  #         - "topic-a"
+  #         - "topic-b"
+  #   destination:
+  #     type: kafka
+  #     connection:
+  #       bootstrapServers: "kafka:9092"
+  #   destinationTopic: "aggregated-topic"
+
+  # Fan mode configuration (example - commented out)
+  # fan:
+  #   source:
+  #     type: kafka
+  #     connection:
+  #       bootstrapServers: "kafka:9092"
+  #   sourceTopic: "input-topic"
+  #   destination:
+  #     type: kafka
+  #     connection:
+  #       bootstrapServers: "kafka:9092"
+  #   destinationResolver:
+  #     type: header
+  #     key: destination_topic
+
+# Service configuration (for future metrics endpoint)
+service:
+  enabled: false
+  type: ClusterIP
+  port: 8080
+  annotations: {}
+
+# Service monitor for Prometheus (optional)
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s
