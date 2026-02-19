@@ -1,0 +1,47 @@
+# Funnel Mode Configuration Example
+# Read from multiple sources and publish to one destination
+
+mode: funnel
+
+# Thread pool configuration for parallel processing
+thread_pool:
+  max_workers: 20
+  queue_size: 2000
+
+# Back-pressure configuration
+back_pressure:
+  enabled: true
+  queue_high_watermark: 0.8  # 80% triggers back-pressure
+  queue_low_watermark: 0.5   # 50% releases back-pressure
+
+# Optional: Custom message processor
+# processor_class: "my_package.my_module.MyProcessor"
+
+# Funnel-specific configuration
+funnel:
+  # Multiple sources
+  sources:
+    - type: kafka
+      connection:
+        bootstrap_servers: ['localhost:9092']
+        group_id: 'sub-pub-group-1'
+        auto_offset_reset: 'earliest'
+      topics:
+        - 'topic-a'
+        - 'topic-b'
+    
+    - type: kafka
+      connection:
+        bootstrap_servers: ['localhost:9093']
+        group_id: 'sub-pub-group-2'
+        auto_offset_reset: 'earliest'
+      topics:
+        - 'topic-c'
+  
+  # Single destination
+  destination:
+    type: kafka
+    connection:
+      bootstrap_servers: ['localhost:9094']
+  
+  destination_topic: 'aggregated-topic'

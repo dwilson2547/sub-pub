@@ -1,0 +1,42 @@
+# One-to-One Mode Configuration Example
+# Multiple independent source-to-destination mappings
+
+mode: one_to_one
+
+# Thread pool configuration
+thread_pool:
+  max_workers: 20
+  queue_size: 2000
+
+# Back-pressure configuration
+back_pressure:
+  enabled: true
+  queue_high_watermark: 0.8
+  queue_low_watermark: 0.5
+
+# One-to-one specific configuration
+one_to_one:
+  # Source system
+  source:
+    type: kafka
+    connection:
+      bootstrap_servers: ['localhost:9092']
+      group_id: 'sub-pub-oto-group'
+      auto_offset_reset: 'earliest'
+  
+  # Destination system
+  destination:
+    type: kafka
+    connection:
+      bootstrap_servers: ['localhost:9094']
+  
+  # List of source -> destination topic mappings
+  mappings:
+    - source_topic: 'orders'
+      destination_topic: 'orders-processed'
+    
+    - source_topic: 'payments'
+      destination_topic: 'payments-processed'
+    
+    - source_topic: 'inventory'
+      destination_topic: 'inventory-updates'

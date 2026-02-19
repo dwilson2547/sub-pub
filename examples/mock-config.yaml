@@ -1,0 +1,26 @@
+# Mock Mode Configuration Example
+# For testing and development without actual message systems
+
+mode: one_to_one
+
+thread_pool:
+  max_workers: 5
+  queue_size: 100
+
+back_pressure:
+  enabled: true
+  queue_high_watermark: 0.8
+  queue_low_watermark: 0.5
+
+one_to_one:
+  source:
+    type: mock
+    connection: {}
+  
+  destination:
+    type: mock
+    connection: {}
+  
+  mappings:
+    - source_topic: 'test-input'
+      destination_topic: 'test-output'

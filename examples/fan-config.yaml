@@ -1,0 +1,41 @@
+# Fan Mode Configuration Example
+# Read from one source and publish to many destinations based on message content
+
+mode: fan
+
+# Thread pool configuration
+thread_pool:
+  max_workers: 20
+  queue_size: 2000
+
+# Back-pressure configuration
+back_pressure:
+  enabled: true
+  queue_high_watermark: 0.8
+  queue_low_watermark: 0.5
+
+# Fan-specific configuration
+fan:
+  # Single source
+  source:
+    type: kafka
+    connection:
+      bootstrap_servers: ['localhost:9092']
+      group_id: 'sub-pub-fan-group'
+      auto_offset_reset: 'earliest'
+  
+  source_topic: 'input-topic'
+  
+  # Destination
+  destination:
+    type: kafka
+    connection:
+      bootstrap_servers: ['localhost:9094']
+  
+  # How to determine destination topic from message
+  # Options: 
+  #   - type: 'header', key: '<header_name>'
+  #   - type: 'payload_key', key: '<json_key>'
+  destination_resolver:
+    type: 'header'
+    key: 'destination_topic'
