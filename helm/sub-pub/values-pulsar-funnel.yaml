@@ -1,0 +1,57 @@
+# Example values for Pulsar deployment
+# This example shows a funnel configuration with Pulsar
+
+replicaCount: 2
+
+image:
+  repository: sub-pub
+  pullPolicy: IfNotPresent
+  tag: "0.1.0"
+
+config:
+  mode: funnel
+  logLevel: INFO
+  
+  threadPool:
+    maxWorkers: 25
+    queueSize: 2500
+  
+  backPressure:
+    enabled: true
+    queueHighWatermark: 0.8
+    queueLowWatermark: 0.5
+  
+  funnel:
+    sources:
+      - type: pulsar
+        connection:
+          serviceUrl: "pulsar://pulsar-broker.default.svc.cluster.local:6650"
+          subscriptionName: "sub-pub-subscription"
+        topics:
+          - "persistent://public/default/events-east"
+          - "persistent://public/default/events-west"
+      - type: pulsar
+        connection:
+          serviceUrl: "pulsar://pulsar-broker.default.svc.cluster.local:6650"
+          subscriptionName: "sub-pub-subscription"
+        topics:
+          - "persistent://public/default/events-central"
+    destination:
+      type: pulsar
+      connection:
+        serviceUrl: "pulsar://pulsar-broker.default.svc.cluster.local:6650"
+    destinationTopic: "persistent://public/default/events-aggregated"
+
+resources:
+  limits:
+    cpu: 1500m
+    memory: 768Mi
+  requests:
+    cpu: 300m
+    memory: 384Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 75

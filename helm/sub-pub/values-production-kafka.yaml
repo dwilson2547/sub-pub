@@ -1,0 +1,73 @@
+# Example values for production Kafka deployment
+# This example shows a complete one-to-one configuration
+
+replicaCount: 3
+
+image:
+  repository: sub-pub
+  pullPolicy: IfNotPresent
+  tag: "0.1.0"
+
+# If using a private registry
+# imagePullSecrets:
+#   - name: registry-credentials
+
+config:
+  mode: one_to_one
+  logLevel: INFO
+  
+  threadPool:
+    maxWorkers: 30
+    queueSize: 3000
+  
+  backPressure:
+    enabled: true
+    queueHighWatermark: 0.8
+    queueLowWatermark: 0.5
+  
+  oneToOne:
+    source:
+      type: kafka
+      connection:
+        bootstrapServers: "kafka-cluster.default.svc.cluster.local:9092"
+        groupId: "sub-pub-processor"
+    destination:
+      type: kafka
+      connection:
+        bootstrapServers: "kafka-cluster.default.svc.cluster.local:9092"
+    mappings:
+      - sourceTopicName: "orders"
+        destinationTopicName: "orders-processed"
+      - sourceTopicName: "payments"
+        destinationTopicName: "payments-processed"
+      - sourceTopicName: "inventory"
+        destinationTopicName: "inventory-processed"
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 15
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Spread pods across nodes for high availability
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - sub-pub
+          topologyKey: kubernetes.io/hostname
