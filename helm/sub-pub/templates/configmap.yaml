@@ -31,6 +31,7 @@ data:
       
       mappings:
         {{- range .Values.config.oneToOne.mappings }}
+        {{- /* Each mapping requires source_topic and destination_topic fields */}}
         - source_topic: {{ .source_topic | quote }}
           destination_topic: {{ .destination_topic | quote }}
         {{- end }}

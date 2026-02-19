@@ -51,6 +51,8 @@ ENV CONFIG_FILE=/app/config/config.yaml
 EXPOSE 8080
 
 # Health check (basic check if process is running)
+# NOTE: This only verifies the process exists, not that it's functioning correctly.
+# A more robust health check would require an HTTP metrics endpoint (planned feature).
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD pgrep -f "sub-pub" || exit 1
 

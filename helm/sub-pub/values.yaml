@@ -114,8 +114,8 @@ config:
       connection:
         bootstrapServers: "kafka:9092"
     mappings:
-      - source_topic: "input-topic"
-        destination_topic: "output-topic"
+      - source_topic: "orders-raw"
+        destination_topic: "orders-validated"
 
   # Funnel mode configuration (example - commented out)
   # funnel:
