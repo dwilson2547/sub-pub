@@ -4,25 +4,16 @@ import json
 import time
 import subprocess
 import sys
+import re as regex_module
 from pathlib import Path
-from behave import when, then
+from behave import when, then, use_step_matcher
 
 
-# Message publishing steps
+# Message publishing steps - use regex matcher for precision
 
-@when('I publish message "{message}" to source topic "{topic}"')
-@when('I publish message "{message}" to topic "{topic}"')
-def step_publish_message_to_topic(context, message, topic):
-    """Publish a message to a topic"""
-    kafka_helper = context.helpers.get('kafka')
-    if kafka_helper:
-        kafka_helper.publish_message(topic, message)
-        if not hasattr(context, 'published_messages'):
-            context.published_messages = []
-        context.published_messages.append({'topic': topic, 'message': message})
+use_step_matcher("re")
 
-
-@when('I publish message "{message}" with header "{header_key}" = "{header_value}" to topic "{topic}"')
+@when(r'I publish message "(?P<message>[^"]+)" with header "(?P<header_key>[^"]+)" = "(?P<header_value>[^"]+)" to topic "(?P<topic>[^"]+)"')
 def step_publish_message_with_header(context, message, header_key, header_value, topic):
     """Publish a message with headers to a topic"""
     kafka_helper = context.helpers.get('kafka')
@@ -36,6 +27,43 @@ def step_publish_message_with_header(context, message, header_key, header_value,
             'message': message,
             'headers': headers
         })
+
+
+@when(r'I publish message "(?P<message>[^"]+)" with property "(?P<prop_key>[^"]+)" = "(?P<prop_value>[^"]+)" to topic "(?P<topic>[^"]+)"')
+def step_publish_message_with_property(context, message, prop_key, prop_value, topic):
+    """Publish a message with properties to a Pulsar topic"""
+    pulsar_helper = context.helpers.get('pulsar')
+    if pulsar_helper:
+        properties = {prop_key: prop_value}
+        pulsar_helper.publish_message(topic, message, properties=properties)
+        if not hasattr(context, 'published_messages'):
+            context.published_messages = []
+        context.published_messages.append({
+            'topic': topic,
+            'message': message,
+            'properties': properties
+        })
+
+
+# Back to parse matcher for simpler patterns
+use_step_matcher("parse")
+
+
+@when('I publish message "{message}" to topic "{topic}"')
+def step_publish_simple_message(context, message, topic):
+    """Publish a simple message to a topic (no modifiers)"""
+    kafka_helper = context.helpers.get('kafka')
+    if kafka_helper:
+        kafka_helper.publish_message(topic, message)
+        if not hasattr(context, 'published_messages'):
+            context.published_messages = []
+        context.published_messages.append({'topic': topic, 'message': message})
+
+
+@when('I publish message "{message}" to source topic "{topic}"')
+def step_publish_message_to_source_topic(context, message, topic):
+    """Publish a message to a source topic"""
+    step_publish_simple_message(context, message, topic)
 
 
 @when('I publish JSON message {json_data} to topic "{topic}"')
@@ -70,22 +98,6 @@ def step_publish_message_to_pulsar_topic(context, message, topic):
         if not hasattr(context, 'published_messages'):
             context.published_messages = []
         context.published_messages.append({'topic': topic, 'message': message, 'system': 'pulsar'})
-
-
-@when('I publish message "{message}" with property "{prop_key}" = "{prop_value}" to topic "{topic}"')
-def step_publish_message_with_property(context, message, prop_key, prop_value, topic):
-    """Publish a message with properties to a Pulsar topic"""
-    pulsar_helper = context.helpers.get('pulsar')
-    if pulsar_helper:
-        properties = {prop_key: prop_value}
-        pulsar_helper.publish_message(topic, message, properties=properties)
-        if not hasattr(context, 'published_messages'):
-            context.published_messages = []
-        context.published_messages.append({
-            'topic': topic,
-            'message': message,
-            'properties': properties
-        })
 
 
 @when('I publish {count:d} messages with alternating destinations to topic "{topic}"')
@@ -174,8 +186,7 @@ def step_wait_for_seconds(context, seconds):
 # Message validation steps
 
 @then('destination topic "{topic}" should receive {count:d} messages')
-@then('destination topic "{topic}" should receive {count:d} message')
-def step_verify_message_count(context, topic, count):
+def step_verify_message_count_plural(context, topic, count):
     """Verify that a destination topic received the expected number of messages"""
     kafka_helper = context.helpers.get('kafka')
     assert kafka_helper, "Kafka helper not initialized"
@@ -189,9 +200,14 @@ def step_verify_message_count(context, topic, count):
     assert len(messages) == count, f"Expected {count} messages, but got {len(messages)}"
 
 
+@then('destination topic "{topic}" should receive {count:d} message')
+def step_verify_message_count_singular(context, topic, count):
+    """Verify that a destination topic received the expected number of messages (singular)"""
+    step_verify_message_count_plural(context, topic, count)
+
+
 @then('Kafka topic "{topic}" should receive {count:d} messages')
-@then('Kafka topic "{topic}" should receive {count:d} message')
-def step_verify_kafka_message_count(context, topic, count):
+def step_verify_kafka_message_count_plural(context, topic, count):
     """Verify that a Kafka topic received the expected number of messages"""
     kafka_helper = context.helpers.get('kafka')
     assert kafka_helper, "Kafka helper not initialized"
@@ -202,9 +218,14 @@ def step_verify_kafka_message_count(context, topic, count):
     assert len(messages) == count, f"Expected {count} messages in Kafka topic, but got {len(messages)}"
 
 
+@then('Kafka topic "{topic}" should receive {count:d} message')
+def step_verify_kafka_message_count_singular(context, topic, count):
+    """Verify that a Kafka topic received the expected number of messages (singular)"""
+    step_verify_kafka_message_count_plural(context, topic, count)
+
+
 @then('Pulsar topic "{topic}" should receive {count:d} messages')
-@then('Pulsar topic "{topic}" should receive {count:d} message')
-def step_verify_pulsar_message_count(context, topic, count):
+def step_verify_pulsar_message_count_plural(context, topic, count):
     """Verify that a Pulsar topic received the expected number of messages"""
     pulsar_helper = context.helpers.get('pulsar')
     assert pulsar_helper, "Pulsar helper not initialized"
@@ -215,10 +236,15 @@ def step_verify_pulsar_message_count(context, topic, count):
     assert len(messages) == count, f"Expected {count} messages in Pulsar topic, but got {len(messages)}"
 
 
+@then('Pulsar topic "{topic}" should receive {count:d} message')
+def step_verify_pulsar_message_count_singular(context, topic, count):
+    """Verify that a Pulsar topic received the expected number of messages (singular)"""
+    step_verify_pulsar_message_count_plural(context, topic, count)
+
+
 @then('the message should contain "{expected_content}"')
-@then('the messages should contain "{expected_content}"')
-def step_verify_message_contains(context, expected_content):
-    """Verify that consumed messages contain expected content"""
+def step_verify_message_contains_singular(context, expected_content):
+    """Verify that consumed message contains expected content"""
     assert context.consumed_messages, "No messages consumed"
     
     found = False
@@ -229,6 +255,12 @@ def step_verify_message_contains(context, expected_content):
             break
     
     assert found, f"Expected content '{expected_content}' not found in messages"
+
+
+@then('the messages should contain "{expected_content}"')
+def step_verify_messages_contain_plural(context, expected_content):
+    """Verify that consumed messages contain expected content"""
+    step_verify_message_contains_singular(context, expected_content)
 
 
 @then('one message should have header "{header_key}" = "{header_value}"')
