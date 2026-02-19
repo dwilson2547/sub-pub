@@ -1,0 +1,22 @@
+# Core dependencies
+PyYAML>=6.0
+
+# Optional message system adapters
+# Install only what you need:
+# pip install sub-pub[kafka]
+# pip install sub-pub[pulsar]
+# pip install sub-pub[all]
+
+# Kafka
+kafka-python>=2.0.2
+
+# Pulsar
+# pulsar-client>=3.3.0
+
+# Azure Event Hubs
+# azure-eventhub>=5.11.0
+
+# Google Cloud Pub/Sub
+# google-cloud-pubsub>=2.18.0
+
+# Note: Iggy adapter requires custom implementation
