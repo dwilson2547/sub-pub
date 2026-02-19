@@ -1,0 +1,20 @@
+Feature: One-to-One Mode End-to-End Testing # tests/features/one_to_one.feature:1
+  As a sub-pub user
+  I want to map topics one-to-one between systems
+  So that I can migrate or replicate data efficiently
+  @kafka
+  Scenario: One-to-one mapping between Kafka topics                      # tests/features/one_to_one.feature:7
+    Given a Kafka container is running                                   # tests/features/steps/common_steps.py:13
+    And a one-to-one config with 3 topic mappings                        # tests/features/steps/common_steps.py:351
+    When I publish message "order-123" to topic "orders"                 # tests/features/steps/message_steps.py:52
+    And I publish message "payment-456" to topic "payments"              # tests/features/steps/message_steps.py:52
+    And I publish message "inventory-789" to topic "inventory"           # tests/features/steps/message_steps.py:52
+    And I start sub-pub with the one-to-one config                       # tests/features/steps/message_steps.py:154
+    And I wait for 15 seconds                                            # tests/features/steps/message_steps.py:180
+    Then destination topic "orders-processed" should receive 1 message   # tests/features/steps/message_steps.py:203
+    And the message should contain "order-123"                           # tests/features/steps/message_steps.py:245
+    And destination topic "payments-processed" should receive 1 message  # tests/features/steps/message_steps.py:203
+    And the message should contain "payment-456"                         # tests/features/steps/message_steps.py:245
+    And destination topic "inventory-processed" should receive 1 message # tests/features/steps/message_steps.py:203
+    And the message should contain "inventory-789"                       # tests/features/steps/message_steps.py:245
+
