@@ -1,2 +1,10 @@
-- [ ] Create Prometheus metrics exporter plugin
-- [ ]
+- [ ]  Create Prometheus metrics exporter plugin
+- [ ]  Message filtering capabilities
+- [ ]  Multiple destination servers support
+- [ ]  Message batching optimization
+- [ ]  Async I/O support for better performance
+- [ ]  Complete Event Hubs implementation
+- [ ]  Complete Google Pub/Sub implementation
+- [ ]  Iggy adapter implementation
+- [ ]  Dead letter queue support
+- [ ]  Message retry logic
