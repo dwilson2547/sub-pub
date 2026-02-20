@@ -31,6 +31,10 @@ setup(
         "pulsar": ["pulsar-client>=3.3.0"],
         "eventhubs": ["azure-eventhub>=5.11.0"],
         "google_pubsub": ["google-cloud-pubsub>=2.18.0"],
+        "opentelemetry": [
+            "opentelemetry-api>=1.20.0",
+            "opentelemetry-sdk>=1.20.0",
+        ],
         "test": [
             "behave>=1.2.6",
             "testcontainers>=3.7.1",
