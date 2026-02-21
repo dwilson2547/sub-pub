@@ -2,7 +2,7 @@
 replicaCount: 1
 
 image:
-  repository: sub-pub
+  repository: dwilson2547/sub-pub
   pullPolicy: IfNotPresent
   tag: ""  # Overrides the image tag whose default is the chart appVersion
 
