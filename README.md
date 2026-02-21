@@ -278,6 +278,54 @@ helm install sub-pub ./helm/sub-pub -f custom-values.yaml
 
 See [helm/KUBERNETES.md](helm/KUBERNETES.md) for detailed Kubernetes deployment instructions.
 
+## CI/CD Pipeline
+
+The repository uses a GitHub Actions CI/CD pipeline (`.github/workflows/ci-cd.yml`) with the following stages:
+
+- **test** – runs `pytest tests/` on every pull request or push to `main`
+- **publish-snapshot** – on pull requests, builds and pushes a Docker snapshot image to Docker Hub
+- **release** – on push to `main`, creates a GitHub Release, publishes the Docker image, and publishes the Helm chart to Docker Hub as an OCI artifact
+
+### Required GitHub Secrets
+
+The pipeline requires the following repository secrets to be configured under **Settings → Secrets and variables → Actions**:
+
+| Secret | Description |
+|--------|-------------|
+| `DOCKERHUB_USERNAME` | Your Docker Hub username |
+| `DOCKERHUB_TOKEN` | A Docker Hub Personal Access Token with **Read & Write** scope |
+
+> **Note:** Without these secrets configured, the Docker image push and Helm chart publish steps will fail with `401 Unauthorized`.
+
+### Installing the Published Helm Chart
+
+Once a release has been published, you can install the Helm chart directly from Docker Hub's OCI registry:
+
+```bash
+helm install sub-pub oci://registry-1.docker.io/<DOCKERHUB_USERNAME>/sub-pub --version <version>
+```
+
+### Pipeline Failure: Helm Publish 401 Unauthorized
+
+If you see an error like the following in the `release` job:
+
+```
+Error: failed to perform "Exists" on destination: HEAD
+"https://registry-1.docker.io/v2/<user>/charts/sub-pub/manifests/...":
+response status code 401: Unauthorized
+```
+
+This was caused by the `helm push` target using a three-component OCI path
+(`registry-1.docker.io/USERNAME/charts/sub-pub`) that Docker Hub does not
+support — Docker Hub OCI repositories only accept two-component paths
+(`namespace/repository`).
+
+**Fix applied:** The `helm push` target was changed from
+`oci://registry-1.docker.io/$DOCKERHUB_USERNAME/charts` →
+`oci://registry-1.docker.io/$DOCKERHUB_USERNAME`, which pushes the chart
+to `registry-1.docker.io/USERNAME/sub-pub:VERSION` — a valid Docker Hub
+repository path.
+
 ## Development
 
 ### Running Tests

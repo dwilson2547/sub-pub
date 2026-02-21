@@ -141,7 +141,7 @@ jobs:
         if: steps.tag-check.outputs.exists == 'false'
         run: |
           helm push sub-pub-${{ steps.version.outputs.version }}.tgz \
-            oci://registry-1.docker.io/${{ secrets.DOCKERHUB_USERNAME }}/charts
+            oci://registry-1.docker.io/${{ secrets.DOCKERHUB_USERNAME }}
       - name: Upload Helm chart to GitHub Release
         if: steps.tag-check.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
