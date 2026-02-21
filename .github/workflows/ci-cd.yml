@@ -1,0 +1,150 @@
+name: CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      src: ${{ steps.filter.outputs.src }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            src:
+              - 'sub_pub/**'
+              - 'tests/**'
+              - 'test_*.py'
+              - 'setup.py'
+              - 'requirements.txt'
+              - 'Dockerfile'
+              - 'helm/**'
+              - 'behave.ini'
+
+  test:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.src == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -e ".[test,opentelemetry]"
+      - name: Run tests
+        run: pytest tests/ -v
+
+  publish-snapshot:
+    needs: test
+    if: github.event_name == 'pull_request' && needs.test.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(grep -m1 'version=' setup.py | grep -oP '(?<=version=")[^"]+')
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push snapshot Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/sub-pub:${{ steps.version.outputs.version }}-snapshot
+            ${{ secrets.DOCKERHUB_USERNAME }}/sub-pub:pr-${{ github.event.pull_request.number }}
+
+  release:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.test.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Get version from setup.py
+        id: version
+        run: |
+          VERSION=$(grep -m1 'version=' setup.py | grep -oP '(?<=version=")[^"]+')
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+      - name: Check if tag already exists
+        id: tag-check
+        run: |
+          if git ls-remote --tags origin | grep -q "refs/tags/v${{ steps.version.outputs.version }}$"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Create GitHub Release
+        if: steps.tag-check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          generate_release_notes: true
+      - name: Set up Docker Buildx
+        if: steps.tag-check.outputs.exists == 'false'
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to Docker Hub
+        if: steps.tag-check.outputs.exists == 'false'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push Docker image
+        if: steps.tag-check.outputs.exists == 'false'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/sub-pub:${{ steps.version.outputs.version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/sub-pub:latest
+      - name: Install Helm
+        if: steps.tag-check.outputs.exists == 'false'
+        uses: azure/setup-helm@v4
+      - name: Log in to Docker Hub Helm registry
+        if: steps.tag-check.outputs.exists == 'false'
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | helm registry login registry-1.docker.io --username "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+      - name: Package Helm chart
+        if: steps.tag-check.outputs.exists == 'false'
+        run: |
+          helm package helm/sub-pub \
+            --version ${{ steps.version.outputs.version }} \
+            --app-version ${{ steps.version.outputs.version }}
+      - name: Push Helm chart to Docker Hub OCI registry
+        if: steps.tag-check.outputs.exists == 'false'
+        run: |
+          helm push sub-pub-${{ steps.version.outputs.version }}.tgz \
+            oci://registry-1.docker.io/${{ secrets.DOCKERHUB_USERNAME }}/charts
+      - name: Upload Helm chart to GitHub Release
+        if: steps.tag-check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          files: sub-pub-${{ steps.version.outputs.version }}.tgz

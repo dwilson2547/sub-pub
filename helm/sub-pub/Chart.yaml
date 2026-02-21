@@ -12,3 +12,7 @@ keywords:
 home: https://github.com/dwilson2547/sub-pub
 maintainers:
   - name: David Wilson
+annotations:
+  artifacthub.io/license: MIT
+  artifacthub.io/prerelease: "false"
+  artifacthub.io/category: streaming-messaging
