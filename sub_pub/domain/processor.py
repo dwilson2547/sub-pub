@@ -18,3 +18,20 @@ class PassThroughProcessor(MessageProcessor):
     def process(self, message: Message) -> Message:
         """Return the message unchanged"""
         return message
+
+
+class AsyncMessageProcessor(ABC):
+    """Abstract base class for async message processors"""
+
+    @abstractmethod
+    async def process(self, message: Message) -> Message:
+        """Process a message and return the transformed message"""
+        pass
+
+
+class AsyncPassThroughProcessor(AsyncMessageProcessor):
+    """Default async pass-through processor that doesn't modify messages"""
+
+    async def process(self, message: Message) -> Message:
+        """Return the message unchanged"""
+        return message
