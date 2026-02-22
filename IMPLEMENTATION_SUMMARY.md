@@ -27,11 +27,11 @@ Successfully implemented a high-performance, thread-based pub-sub message proces
 - **Full Implementations**:
   - Apache Kafka (kafka-python)
   - Apache Pulsar (pulsar-client)
+  - Azure Event Hubs (azure-eventhub)
+  - Google Cloud Pub/Sub (google-cloud-pubsub)
   - Mock adapter (for testing)
 
 - **Stub Implementations** (framework in place):
-  - Azure Event Hubs
-  - Google Cloud Pub/Sub
   - Iggy
 
 ### 3. Architecture ✓
@@ -244,8 +244,6 @@ python -m sub_pub.main -c examples/mock-config.yaml
 - [ ] HTTP endpoint for live metrics
 - [ ] Prometheus metrics exporter
 - [ ] Async I/O for better performance
-- [ ] Complete Event Hubs implementation
-- [ ] Complete Google Pub/Sub implementation
 - [ ] Iggy adapter implementation
 - [ ] Message batching optimization
 - [ ] Dead letter queue support
@@ -255,7 +253,7 @@ python -m sub_pub.main -c examples/mock-config.yaml
 ## Success Criteria Met
 
 ✅ Three run modes (Funnel, Fan, One-to-One)
-✅ Multiple message system support
+✅ Multiple message system support (Kafka, Pulsar, Event Hubs, Google Pub/Sub, Mock)
 ✅ Source → Domain → Publisher architecture
 ✅ Extensible domain layer
 ✅ Thread pool-based processing

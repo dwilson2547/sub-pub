@@ -10,99 +10,136 @@ logger = logging.getLogger(__name__)
 
 class GooglePubSubSource(MessageSource):
     """Google Cloud Pub/Sub message source"""
-    
+
     def __init__(self, config: dict):
         self.config = config
         self.subscriber = None
         self.subscription_path = None
-        
+        self._pending_ack_ids: List[str] = []
+
     def connect(self) -> None:
         """Establish connection to Google Pub/Sub"""
         try:
             from google.cloud import pubsub_v1
-            
+
             self.subscriber = pubsub_v1.SubscriberClient()
             self.subscription_path = self.subscriber.subscription_path(
                 self.config['project_id'],
                 self.config['subscription_id']
             )
+            self._pending_ack_ids = []
             logger.info("Connected to Google Pub/Sub source")
         except ImportError:
             logger.error("google-cloud-pubsub package not installed. Install with: pip install google-cloud-pubsub")
             raise
-        
+
     def subscribe(self, topics: List[str]) -> None:
-        """Subscribe to topics (Google Pub/Sub uses subscriptions)"""
+        """Subscribe to topics (Google Pub/Sub uses subscriptions, not ad-hoc topics)"""
         logger.info(f"Google Pub/Sub uses subscription: {self.subscription_path}")
-        
+
     def consume(self) -> Iterator[Message]:
-        """Consume messages from Google Pub/Sub"""
+        """Consume messages from Google Pub/Sub via synchronous pull.
+
+        Optional config keys:
+          - ``max_messages`` (int, default 100): maximum number of messages
+            returned per pull request.
+        """
         if not self.subscriber:
             raise RuntimeError("Subscriber not connected")
-        
-        # This is a simplified version - actual implementation would need to handle
-        # the async/callback nature of Google Pub/Sub
-        logger.warning("Google Pub/Sub adapter is a stub - requires full async implementation")
-        yield from []
-        
+
+        max_messages = self.config.get('max_messages', 100)
+
+        while True:
+            try:
+                response = self.subscriber.pull(
+                    request={
+                        "subscription": self.subscription_path,
+                        "max_messages": max_messages,
+                    }
+                )
+            except Exception as e:
+                logger.error(f"Error pulling messages from Google Pub/Sub: {e}")
+                continue
+
+            for received_message in response.received_messages:
+                msg = received_message.message
+                headers = dict(msg.attributes) if msg.attributes else {}
+                message = Message(
+                    payload=msg.data,
+                    headers=headers,
+                    topic=self.subscription_path,
+                    timestamp=msg.publish_time,
+                )
+                self._pending_ack_ids.append(received_message.ack_id)
+                yield message
+
     def close(self) -> None:
         """Close Google Pub/Sub connection"""
         if self.subscriber:
             self.subscriber.close()
             logger.info("Google Pub/Sub source closed")
-        
+
     def commit(self, message: Optional[Message] = None) -> None:
-        """Acknowledge message"""
-        pass
+        """Acknowledge pending messages."""
+        if not self._pending_ack_ids or not self.subscriber:
+            return
+        try:
+            self.subscriber.acknowledge(
+                request={
+                    "subscription": self.subscription_path,
+                    "ack_ids": self._pending_ack_ids,
+                }
+            )
+            self._pending_ack_ids = []
+        except Exception as e:
+            logger.error(f"Error acknowledging Google Pub/Sub messages: {e}")
 
 
 class GooglePubSubPublisher(MessagePublisher):
     """Google Cloud Pub/Sub message publisher"""
-    
+
     def __init__(self, config: dict):
         self.config = config
         self.publisher = None
         self.topic_paths = {}
-        
+
     def connect(self) -> None:
         """Establish connection to Google Pub/Sub"""
         try:
             from google.cloud import pubsub_v1
-            
+
             self.publisher = pubsub_v1.PublisherClient()
             logger.info("Connected to Google Pub/Sub publisher")
         except ImportError:
             logger.error("google-cloud-pubsub package not installed. Install with: pip install google-cloud-pubsub")
             raise
-        
+
     def publish(self, message: Message, topic: str) -> None:
-        """Publish a message to Google Pub/Sub"""
+        """Publish a message to Google Pub/Sub."""
         if not self.publisher:
             raise RuntimeError("Publisher not connected")
-        
+
         # Get or create topic path
         if topic not in self.topic_paths:
             self.topic_paths[topic] = self.publisher.topic_path(
                 self.config['project_id'],
                 topic
             )
-        
+
         topic_path = self.topic_paths[topic]
-        
-        # Publish with attributes (headers)
+
+        # Publish with attributes (headers); block until confirmed
         future = self.publisher.publish(
             topic_path,
             message.payload,
-            **message.headers
+            **message.headers,
         )
-        
-        # Wait for publish to complete (for simplicity)
         future.result()
-        
+
     def flush(self) -> None:
-        """Flush buffered messages"""
+        """Flush buffered messages (no-op; each publish already blocks until confirmed)."""
         pass
-        
+
     def close(self) -> None:
         """Close Google Pub/Sub connection"""
         if self.publisher:

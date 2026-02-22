@@ -31,8 +31,8 @@ Extreme performance pub-sub message processor written in Python. Process message
   - Apache Pulsar
   - Azure Event Hubs
   - Google Cloud Pub/Sub
-  - Iggy (stub)
   - Mock (for testing)
+  - Iggy (stub)
 
 ## Installation
 
@@ -50,6 +50,12 @@ pip install -e ".[kafka]"
 
 # For Pulsar support
 pip install -e ".[pulsar]"
+
+# For Azure Event Hubs support
+pip install -e ".[eventhubs]"
+
+# For Google Cloud Pub/Sub support
+pip install -e ".[google_pubsub]"
 
 # For all adapters
 pip install -e ".[all]"
@@ -359,7 +365,8 @@ sub_pub/
 - [ ] Multiple destination servers support
 - [ ] Message batching optimization
 - [ ] Async I/O support for better performance
-- [ ] Complete Event Hubs and Google Pub/Sub implementations
+- [x] Complete Event Hubs implementation
+- [x] Complete Google Pub/Sub implementation
 - [ ] Iggy adapter implementation
 - [ ] Dead letter queue support
 - [ ] Message retry logic
