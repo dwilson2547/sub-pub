@@ -1,0 +1,13 @@
+mode: one_to_one
+
+source:
+  type: mock
+
+destination:
+  type: mock
+
+mappings:
+  - source_topic: topic-a
+    destination_topic: topic-b
+  - source_topic: topic-c
+    destination_topic: topic-d
