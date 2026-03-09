@@ -1,0 +1,15 @@
+mode: fan
+
+source:
+  type: mock
+  topics:
+    - inbound
+
+source_topic: inbound
+
+destination:
+  type: mock
+
+destination_resolver:
+  type: header
+  header_key: dest

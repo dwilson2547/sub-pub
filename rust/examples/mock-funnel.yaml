@@ -1,0 +1,14 @@
+mode: funnel
+
+sources:
+  - type: mock
+    topics:
+      - source-topic-1
+  - type: mock
+    topics:
+      - source-topic-2
+
+destination:
+  type: mock
+
+destination_topic: aggregated-topic
